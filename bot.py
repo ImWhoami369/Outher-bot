@@ -12,7 +12,7 @@ from telebot import types
 # 1. CONFIGURAÇÕES E CHAVES
 # ======================================================
 TOKEN = '8738063689:AAFz8wY1zaE3BixUupl0RBQ9exiy5l8260U'
-CHAT_ID = '8738063689'
+CHAT_ID = '-1004462590776'
 RENDER_URL = "https://outher-bot.onrender.com/"  # Substitua pela sua URL do Render quando subir
 
 bot = telebot.TeleBot(TOKEN)
