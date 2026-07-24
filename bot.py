@@ -13,7 +13,7 @@ from telebot import types
 # ======================================================
 TOKEN = '8633142310:AAEzfPzJQiUx9TzTOGIQMkrI0yC3SN5lIxM'
 CHAT_ID = '8633142310'
-RENDER_URL = "https://bottelegram-7-t8e.onrender.com"  # Substitua pela sua URL do Render quando subir
+RENDER_URL = "https://bottelegram-1-jtr3.onrender.com"  # Substitua pela sua URL do Render quando subir
 
 bot = telebot.TeleBot(TOKEN)
 bot_rodando = True  # Flag global para Pausar/Iniciar varredura
