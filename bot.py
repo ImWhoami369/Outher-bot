@@ -27,7 +27,7 @@ SYMBOLS = [
 TIMEFRAME = '1m'
 TS_PCT = 1.0  # Trailing Stop de 1.0%
 
-exchange = ccxt.binanceusdm({
+exchange = ccxt.kucoin({
     'enableRateLimit': True,
     'options': {'defaultType': 'future'}
 })
