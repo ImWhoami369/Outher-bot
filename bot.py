@@ -302,4 +302,3 @@ enviar_telegram_simples("🤖 <b>BOT M1 SCALPER ONLINE COM PAINEL INTERATIVO!</b
 while True:
     analisar_e_executar()
     time.sleep(10)
-                     
