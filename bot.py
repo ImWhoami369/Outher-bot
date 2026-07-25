@@ -13,7 +13,7 @@ from telebot import types
 # ======================================================
 TOKEN = '8738063689:AAFz8wY1zaE3BixUupl0RBQ9exiy5l8260U'
 CHAT_ID = '-1004462590776'
-RENDER_URL = "https://outher-bot.onrender.com/"  # Substitua pela sua URL do Render quando subir
+RENDER_URL = "Bot Scalper M1 Interativo Ativo!"  # Substitua pela sua URL do Render quando subir
 
 bot = telebot.TeleBot(TOKEN)
 bot_rodando = True  # Flag global para Pausar/Iniciar varredura
