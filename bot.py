@@ -1,4 +1,4 @@
-1import os
+import os
 import time
 import threading
 from datetime import datetime
@@ -15,7 +15,6 @@ from telebot import types
 TOKEN = '8738063689:AAFz8wY1zaE3BixUupl0RBQ9exiy5l8260U'
 CHAT_ID = '-1004462590776'
 
-# COLE AQUI A URL DO SEU DEPLOY (HEROKU / RENDER / KOYEB)
 DEPLOY_URL = "https://bottelegram-1-jtr3.onrender.com"  
 
 bot = telebot.TeleBot(TOKEN)
@@ -133,7 +132,12 @@ def callback_close_position(call):
         bot.answer_callback_query(call.id, text="Essa posição já não está mais ativa.")
 
 def escutar_telegram():
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    while True:
+        try:
+            bot.infinity_polling(timeout=10, long_polling_timeout=5)
+        except Exception as e:
+            print(f"Erro na escuta do Telegram (reconectando em 5s): {e}")
+            time.sleep(5)
 
 threading.Thread(target=escutar_telegram, daemon=True).start()
 
@@ -365,5 +369,5 @@ enviar_telegram_simples("🤖 <b>BOT M1 SCALPER ONLINE COM PAINEL INTERATIVO!</b
 
 while True:
     analisar_e_executar()
-    time.sleep(10)
-    
+    # Pausa de 1 minuto e 30 segundos (90s)
+    time.sleep(90)
