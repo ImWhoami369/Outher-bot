@@ -1,6 +1,7 @@
-import os
+1import os
 import time
 import threading
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import ccxt
 import pandas as pd
@@ -13,7 +14,9 @@ from telebot import types
 # ======================================================
 TOKEN = '8738063689:AAFz8wY1zaE3BixUupl0RBQ9exiy5l8260U'
 CHAT_ID = '-1004462590776'
-RENDER_URL = "Bot Scalper M1 Interativo Ativo!"  # Substitua pela sua URL do Render quando subir
+
+# COLE AQUI A URL DO SEU DEPLOY (HEROKU / RENDER / KOYEB)
+DEPLOY_URL = "https://seu-app-aqui.herokuapp.com"  
 
 bot = telebot.TeleBot(TOKEN)
 bot_rodando = True  # Flag global para Pausar/Iniciar varredura
@@ -37,20 +40,28 @@ posicoes = {
     for symbol in SYMBOLS
 }
 
+# Estrutura de métricas do Relatório Diário
+historico_diario = {
+    'total_trades': 0,
+    'wins': 0,
+    'losses': 0,
+    'pnl_total': 0.0
+}
+
 # ======================================================
 # 2. PAINEL INTERATIVO E BOTÕES DO TELEGRAM
 # ======================================================
 
-# Menu Fixo de Comandos
 @bot.message_handler(commands=['start', 'menu'])
 def send_welcome(message):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     btn_status = types.KeyboardButton('📊 Status')
     btn_posicoes = types.KeyboardButton('📂 Posições Abertas')
+    btn_relatorio = types.KeyboardButton('📈 Relatório Diário')
     btn_pausar = types.KeyboardButton('⏸️ Pausar Bot')
     btn_iniciar = types.KeyboardButton('▶️ Iniciar Bot')
     
-    markup.add(btn_status, btn_posicoes, btn_pausar, btn_iniciar)
+    markup.add(btn_status, btn_posicoes, btn_relatorio, btn_pausar, btn_iniciar)
     bot.send_message(
         message.chat.id, 
         "🤖 <b>PAINEL DE CONTROLE M1 ULTRA SCALPER</b>\n\nEscolha uma opção no teclado abaixo:", 
@@ -88,6 +99,10 @@ def cmd_posicoes(message):
         
     bot.reply_to(message, texto, parse_mode="HTML")
 
+@bot.message_handler(func=lambda msg: msg.text in ['📈 Relatório Diário', '/relatorio'])
+def cmd_relatorio(message):
+    gerar_e_enviar_relatorio()
+
 @bot.message_handler(func=lambda msg: msg.text == '⏸️ Pausar Bot' or msg.text == '/pausar')
 def cmd_pausar(message):
     global bot_rodando
@@ -100,7 +115,6 @@ def cmd_iniciar(message):
     bot_rodando = True
     bot.reply_to(message, "▶️ <b>Varredura REINICIADA!</b> Buscando novos cruzamentos em M1...", parse_mode="HTML")
 
-# Gerenciador do Botão Inline de "Fechar Posição"
 @bot.callback_query_handler(func=lambda call: call.data.startswith('close_'))
 def callback_close_position(call):
     symbol_code = call.data.replace('close_', '')
@@ -114,7 +128,7 @@ def callback_close_position(call):
     if target_symbol and posicoes[target_symbol]['ativa']:
         posicoes[target_symbol]['ativa'] = False
         bot.answer_callback_query(call.id, text=f"Posição {symbol_code} encerrada manualmente!")
-        bot.send_message(CHAT_ID, f"🛑 <b>OPERAÇÃO ENCERRADA MANUALLY</b> em #{symbol_code} via painel do Telegram.", parse_mode="HTML")
+        bot.send_message(CHAT_ID, f"🛑 <b>OPERAÇÃO ENCERRADA MANUALMENTE</b> em #{symbol_code} via painel do Telegram.", parse_mode="HTML")
     else:
         bot.answer_callback_query(call.id, text="Essa posição já não está mais ativa.")
 
@@ -124,7 +138,7 @@ def escutar_telegram():
 threading.Thread(target=escutar_telegram, daemon=True).start()
 
 # ======================================================
-# 3. DUMMY SERVER & AUTO-PING PARA O RENDER
+# 3. DUMMY SERVER & AUTO-PING (HEROKU / RENDER DEPLOY)
 # ======================================================
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -143,16 +157,64 @@ threading.Thread(target=run_dummy_server, daemon=True).start()
 def keep_alive():
     while True:
         try:
-            time.sleep(600)
-            if "seu-bot" not in RENDER_URL:
-                requests.get(RENDER_URL, timeout=10)
+            time.sleep(600)  # Ping a cada 10 minutos
+            if DEPLOY_URL and "seu-app-aqui" not in DEPLOY_URL:
+                requests.get(DEPLOY_URL, timeout=10)
         except Exception as e:
             print(f"Erro auto-ping: {e}")
 
 threading.Thread(target=keep_alive, daemon=True).start()
 
 # ======================================================
-# 4. AUXILIARES E LÓGICA DE MERCADO
+# 4. FUNÇÕES DE RELATÓRIO DIÁRIO
+# ======================================================
+def registrar_trade(pnl):
+    global historico_diario
+    historico_diario['total_trades'] += 1
+    historico_diario['pnl_total'] += pnl
+    if pnl > 0:
+        historico_diario['wins'] += 1
+    else:
+        historico_diario['losses'] += 1
+
+def gerar_e_enviar_relatorio():
+    total = historico_diario['total_trades']
+    wins = historico_diario['wins']
+    losses = historico_diario['losses']
+    pnl = historico_diario['pnl_total']
+    
+    win_rate = (wins / total * 100) if total > 0 else 0.0
+    cor_pnl = "🟢" if pnl >= 0 else "🔴"
+
+    msg = (
+        f"📈 <b>RELATÓRIO DIÁRIO DE OPERAÇÕES</b> 📈\n"
+        f"📅 <i>Data: {datetime.now().strftime('%d/%m/%Y')}</i>\n\n"
+        f"🎯 <b>Total de Trades:</b> {total}\n"
+        f"🟢 <b>Wins:</b> {wins}\n"
+        f"🔴 <b>Losses:</b> {losses}\n"
+        f"📊 <b>Taxa de Acerto (Win Rate):</b> {win_rate:.1f}%\n"
+        f"{cor_pnl} <b>PnL Acumulado:</b> {pnl:+.2f}%\n"
+    )
+    enviar_telegram_simples(msg)
+
+def agendador_relatorio_diario():
+    while True:
+        agora = datetime.now()
+        # Envia o relatório automaticamente às 23:59
+        if agora.hour == 23 and agora.minute == 59:
+            gerar_e_enviar_relatorio()
+            # Reseta o histórico para o próximo dia
+            historico_diario['total_trades'] = 0
+            historico_diario['wins'] = 0
+            historico_diario['losses'] = 0
+            historico_diario['pnl_total'] = 0.0
+            time.sleep(60)  # Evita envio duplicado no mesmo minuto
+        time.sleep(30)
+
+threading.Thread(target=agendador_relatorio_diario, daemon=True).start()
+
+# ======================================================
+# 5. AUXILIARES E LÓGICA DE MERCADO
 # ======================================================
 def enviar_telegram_com_botao(mensagem, symbol_code):
     markup = types.InlineKeyboardMarkup()
@@ -221,6 +283,7 @@ def analisar_e_executar():
 
                     if low_atual <= pos['ts_price']:
                         pnl = ((pos['ts_price'] - pos['entrada']) / pos['entrada']) * 100
+                        registrar_trade(pnl)
                         resultado_str = "<b>WIN</b> 🎯" if pnl > 0 else "<b>LOSS</b> ❌"
                         cor_emoji = "🟢" if pnl > 0 else "🔴"
 
@@ -240,6 +303,7 @@ def analisar_e_executar():
 
                     if high_atual >= pos['ts_price']:
                         pnl = ((pos['entrada'] - pos['ts_price']) / pos['entrada']) * 100
+                        registrar_trade(pnl)
                         resultado_str = "<b>WIN</b> 🎯" if pnl > 0 else "<b>LOSS</b> ❌"
                         cor_emoji = "🟢" if pnl > 0 else "🔴"
 
@@ -302,3 +366,4 @@ enviar_telegram_simples("🤖 <b>BOT M1 SCALPER ONLINE COM PAINEL INTERATIVO!</b
 while True:
     analisar_e_executar()
     time.sleep(10)
+    
