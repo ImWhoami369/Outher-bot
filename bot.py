@@ -16,7 +16,7 @@ TOKEN = '8738063689:AAFz8wY1zaE3BixUupl0RBQ9exiy5l8260U'
 CHAT_ID = '-1004462590776'
 
 # COLE AQUI A URL DO SEU DEPLOY (HEROKU / RENDER / KOYEB)
-DEPLOY_URL = "https://seu-app-aqui.herokuapp.com"  
+DEPLOY_URL = "https://api.render.com/deploy/srv-d9gttsm1a83c73a0umsg?key=X9h2dqDyHCo"  
 
 bot = telebot.TeleBot(TOKEN)
 bot_rodando = True  # Flag global para Pausar/Iniciar varredura
